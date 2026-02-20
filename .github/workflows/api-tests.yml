@@ -1,0 +1,68 @@
+name: API Tests - Carrefour
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Criar pasta de relatórios
+        run: mkdir -p reports
+
+      # =============================
+      # TESTES FUNCIONAIS
+      # =============================
+      - name: Executar Testes Funcionais
+        run: |
+          npx newman run postman/collection.json \
+          -e postman/environment.json \
+          --folder "01. Autenticacao" \
+          --folder "02. Testes Positivos" \
+          --folder "03. Testes Negativos" \
+          --env-var request_count=0 \
+          --env-var rate_history=[] \
+          --env-var execution_initialized= \
+          -r cli,htmlextra \
+          --reporter-htmlextra-export reports/Report_1_Funcionais.html
+
+      # =============================
+      # TESTE DE RATE LIMIT
+      # =============================
+      - name: Executar Teste de Rate Limit
+        run: |
+          npx newman run postman/collection.json \
+          -e postman/environment.json \
+          --folder "04. Limite de Taxa" \
+          -n 120 \
+          --delay-request 200 \
+          --env-var request_count=0 \
+          --env-var rate_history=[] \
+          --env-var execution_initialized= \
+          -r cli,htmlextra \
+          --reporter-htmlextra-export reports/Report_Tx_Limite.html
+
+      # =============================
+      # PUBLICAR RELATÓRIOS
+      # =============================
+      - name: Upload dos relatórios
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: reports

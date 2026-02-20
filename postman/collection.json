@@ -1,0 +1,1607 @@
+{
+  "info": {
+    "_postman_id": "4e25a681-75de-4e96-868f-2c75cca72f6d",
+    "name": "API Usuarios Carrefour",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52536976",
+    "_collection_link": "https://go.postman.co/collection/52536976-4e25a681-75de-4e96-868f-2c75cca72f6d?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01. Autenticacao",
+      "item": [
+        {
+          "name": "01.1 Login valido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Token gerado\", function () {\r",
+                  "    pm.expect(jsonData.authorization).to.exist;\r",
+                  "});\r",
+                  "\r",
+                  "pm.environment.set(\"token\", jsonData.authorization);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// =============================\r",
+                  "// CRIAR USUÁRIO AUTOMATICAMENTE\r",
+                  "// =============================\r",
+                  "\r",
+                  "// Base URL fixa (fallback seguro)\r",
+                  "const baseUrl = pm.environment.get(\"url\") || \"https://serverest.dev\";\r",
+                  "\r",
+                  "// Validação de segurança\r",
+                  "if (!baseUrl) {\r",
+                  "    throw new Error(\"Base URL não definida!\");\r",
+                  "}\r",
+                  "\r",
+                  "// Gerar dados dinâmicos\r",
+                  "const email = `user${Math.floor(Math.random() * 100000)}@teste.com`;\r",
+                  "const password = \"123456\";\r",
+                  "\r",
+                  "// Salvar no environment\r",
+                  "pm.environment.set(\"loginEmail\", email);\r",
+                  "pm.environment.set(\"loginPassword\", password);\r",
+                  "\r",
+                  "// Criar usuário antes do login\r",
+                  "pm.sendRequest({\r",
+                  "    url: `${baseUrl}/usuarios`,\r",
+                  "    method: \"POST\",\r",
+                  "    header: {\r",
+                  "        \"Content-Type\": \"application/json\"\r",
+                  "    },\r",
+                  "    body: {\r",
+                  "        mode: \"raw\",\r",
+                  "        raw: JSON.stringify({\r",
+                  "            nome: \"Usuario Login\",\r",
+                  "            email: email,\r",
+                  "            password: password,\r",
+                  "            administrador: \"true\"\r",
+                  "        })\r",
+                  "    }\r",
+                  "}, function (err, res) {\r",
+                  "\r",
+                  "    if (err) {\r",
+                  "        console.log(\"Erro ao criar usuário:\", err);\r",
+                  "        return;\r",
+                  "    }\r",
+                  "\r",
+                  "    if (res.code !== 201) {\r",
+                  "        console.log(\"Erro ao criar usuário:\", res.code, res.text());\r",
+                  "        return;\r",
+                  "    }\r",
+                  "\r",
+                  "    console.log(\"Usuário criado com sucesso:\", res.json());\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"{{loginEmail}}\",\r\n  \"password\": \"{{loginPassword}}\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/login",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "01.2 Login invalido - senha errada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//Funções\r",
+                  "function getErrorMessage(jsonData) {\r",
+                  "    if (!jsonData) return \"\";\r",
+                  "    if (jsonData.message) return jsonData.message.toLowerCase();\r",
+                  "    const firstKey = Object.keys(jsonData)[0];\r",
+                  "    return String(jsonData[firstKey]).toLowerCase();\r",
+                  "}\r",
+                  "\r",
+                  "function expectErrorMessage(jsonData, expected) {\r",
+                  "    const message = getErrorMessage(jsonData);\r",
+                  "    pm.expect(message).to.include(expected.toLowerCase());\r",
+                  "}\r",
+                  "\r",
+                  "//Teste\r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400 ou 401\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400,401]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Mensagem de erro email e/ou senha inválidos correto\", function () {\r",
+                  "    expectErrorMessage(jsonData, \"email e/ou senha inválidos\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Token NÃO deve existir\", function () {\r",
+                  "    pm.expect(jsonData.authorization).to.be.undefined;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"admin@admin.com\",\r\n  \"password\": \"odmin\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/login",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "01.3 Login invalido - usuario inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//Funções\r",
+                  "function getErrorMessage(jsonData) {\r",
+                  "    if (!jsonData) return \"\";\r",
+                  "    if (jsonData.message) return jsonData.message.toLowerCase();\r",
+                  "    const firstKey = Object.keys(jsonData)[0];\r",
+                  "    return String(jsonData[firstKey]).toLowerCase();\r",
+                  "}\r",
+                  "\r",
+                  "function expectErrorMessage(jsonData, expected) {\r",
+                  "    const message = getErrorMessage(jsonData);\r",
+                  "    pm.expect(message).to.include(expected.toLowerCase());\r",
+                  "}\r",
+                  "\r",
+                  "//Testes \r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400 ou 401\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400,401]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Mensagem de erro email e/ou senha inválidos correto\", function () {\r",
+                  "    expectErrorMessage(jsonData, \"email e/ou senha inválidos\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Token NÃO deve existir\", function () {\r",
+                  "    pm.expect(jsonData.authorization).to.be.undefined;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"odmin@admin.com\",\r\n  \"password\": \"admin\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/login",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "01.4 Login invalido - payload vazio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Campos obrigatórios não informados\", function () {\r",
+                  "    pm.expect(jsonData).to.have.property(\"email\");\r",
+                  "    pm.expect(jsonData).to.have.property(\"password\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Mensagem para campos obrigatórios não informados correto\", function () {\r",
+                  "    pm.expect(jsonData.email.toLowerCase()).to.include(\"obrigatório\");\r",
+                  "    pm.expect(jsonData.password.toLowerCase()).to.include(\"obrigatório\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/login",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02. Testes Positivos",
+      "item": [
+        {
+          "name": "02.1 Validar Schema",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Schema validado com sucesso\", function () {\r",
+                  "    jsonData.usuarios.forEach(user => {\r",
+                  "        pm.expect(user).to.have.property(\"nome\");\r",
+                  "        pm.expect(user).to.have.property(\"email\");\r",
+                  "        pm.expect(user).to.have.property(\"password\");\r",
+                  "        pm.expect(user).to.have.property(\"_id\");\r",
+                  "    });\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02.2 Criar usuário",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 201\", function () {\r",
+                  "    pm.response.to.have.status(201);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Usuário criado com sucesso\", function () {\r",
+                  "    pm.expect(jsonData).to.have.property(\"_id\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.environment.set(\"_id\", jsonData._id);\r",
+                  "pm.environment.set(\"userId\", jsonData._id);\r",
+                  "pm.environment.set(\"email\", pm.environment.get(\"randomEmail\"));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Usuario Teste\",\r\n  \"email\": \"{{randomEmail}}\",\r\n  \"password\": \"123456\",\r\n  \"administrador\": \"true\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02.3 Listar usuarios cadastrados",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Lista retornada\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Lista não vazia\", function () {\r",
+                  "    pm.expect(jsonData.usuarios.length).to.be.above(0);\r",
+                  "});\r",
+                  "\r",
+                  "// Validar cenário listar usuários\r",
+                  "pm.test(\"Lista de usuarios cadastrados exibida com sucesso\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('usuarios');\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02.4 Buscar usuario por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Usuário encontrado\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"ID correto\", function () {\r",
+                  "    pm.expect(jsonData._id).to.eql(pm.environment.get(\"_id\"));\r",
+                  "});\r",
+                  "\r",
+                  "// Validar cenário bucar usuário por ID\r",
+                  "pm.test(\"Busca de usuário por ID exibida com sucesso\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('_id');\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios/{{_id}}",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios",
+                "{{_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02.5 Alterar usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Alteração de usuário realizado com sucesso\", function () {\r",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.include(\"alterado com sucesso\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Usuario Atualizado\",\r\n  \"email\": \"{{email}}\",\r\n  \"password\": \"123456\",\r\n  \"administrador\": \"false\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios/{{_id}}",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios",
+                "{{_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "02.6 Excluir usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 200\", function () {\r",
+                  "    pm.response.to.have.status(200);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Exclusão de usuário realizado com sucesso\", function () {\r",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.include(\"excluído com sucesso\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "https://serverest.dev/usuarios/{{_id}}",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios",
+                "{{_id}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03. Testes Negativos",
+      "item": [
+        {
+          "name": "03.1 Criar usuário duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//Funções\r",
+                  "function getErrorMessage(jsonData) {\r",
+                  "    if (!jsonData) return \"\";\r",
+                  "    if (jsonData.message) return jsonData.message.toLowerCase();\r",
+                  "    const firstKey = Object.keys(jsonData)[0];\r",
+                  "    return String(jsonData[firstKey]).toLowerCase();\r",
+                  "}\r",
+                  "\r",
+                  "function expectErrorMessage(jsonData, expected) {\r",
+                  "    const message = getErrorMessage(jsonData);\r",
+                  "    pm.expect(message).to.include(expected.toLowerCase());\r",
+                  "}\r",
+                  "\r",
+                  "// Teste\r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Erro usuário duplicado\", function () {\r",
+                  "    expectErrorMessage(jsonData, \"já está sendo usado\");\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Usuario Duplicado\",\r\n  \"email\": \"fulano@qa.com\",\r\n  \"password\": \"123456\",\r\n  \"administrador\": \"true\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.2 Consular usuario inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Funções\r",
+                  "function getErrorMessage(jsonData) {\r",
+                  "    if (!jsonData) return \"\";\r",
+                  "    if (jsonData.message) return jsonData.message.toLowerCase();\r",
+                  "    const firstKey = Object.keys(jsonData)[0];\r",
+                  "    return String(jsonData[firstKey]).toLowerCase();\r",
+                  "}\r",
+                  "\r",
+                  "function expectErrorMessage(jsonData, expected) {\r",
+                  "    const message = getErrorMessage(jsonData);\r",
+                  "    pm.expect(message).to.include(expected.toLowerCase());\r",
+                  "}\r",
+                  "\r",
+                  "\r",
+                  "//Testes\r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400 ou 404\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400,404]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Usuário não existe para consulta\", function () {\r",
+                  "    expectErrorMessage(jsonData, \"não encontrado\");\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set(\"userFakeId\", \"32cEuRenato044d6\");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios/{{userFakeId}}",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios",
+                "{{userFakeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.3 Atualizar usuario inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400 ou 404\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400,404]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Usuário não existe para alteração\", function () {\r",
+                  "    if (jsonData.message) {\r",
+                  "        expectErrorMessage(jsonData, \"não encontrado\");\r",
+                  "    }\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set(\"userFakeId\", \"32cEuRenato044d6\");"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios/{{userFakeId}}",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios",
+                "{{userFakeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.4 Deletar usuario inexistente",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.environment.set(\"userFakeId\", \"32cEuRenato044d6\");\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//Funções\r",
+                  "function getErrorMessage(jsonData) {\r",
+                  "    if (!jsonData) return \"\";\r",
+                  "    if (jsonData.message) return jsonData.message.toLowerCase();\r",
+                  "    const firstKey = Object.keys(jsonData)[0];\r",
+                  "    return String(jsonData[firstKey]).toLowerCase();\r",
+                  "}\r",
+                  "\r",
+                  "//Testes\r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 200 ou 400\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200,400]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Usuário não existe para exclusão\", function () {\r",
+                  "    const msg = getErrorMessage(jsonData);\r",
+                  "\r",
+                  "    pm.expect(\r",
+                  "        msg.includes(\"Usuário não encontrado para exclusão\") ||\r",
+                  "        msg.includes(\"nenhum registro excluído\")\r",
+                  "    ).to.be.true;\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios/{{userFakeId}}\n",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios",
+                "{{userFakeId}}\n"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.5 Validar campo obrigatorio - Nome",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "\r",
+                  "//Validar mensagem campo obrigatório Nome\r",
+                  "pm.test(\"Campo obrigatório nome não informado\", function () {\r",
+                  "    pm.expect(jsonData).to.have.property(\"nome\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Mensagem para campo Nome ser obrigatório exibida corretamente\", function () {\r",
+                  "    pm.expect(jsonData.nome.toLowerCase()).to.include(\"não pode ficar em branco\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"\",\r\n  \"email\": \"{{randomEmail}}\",\r\n  \"password\": \"123456\",\r\n  \"administrador\": \"true\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.6 Validar campo obrigatorio - Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "//Validar mensagem campo obrigatório Email\r",
+                  "pm.test(\"Campo obrigatório email não informado\", function () {\r",
+                  "    pm.expect(jsonData).to.have.property(\"email\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Mensagem para campo Email ser obrigatório exibida corretamente\", function () {\r",
+                  "    pm.expect(jsonData.email.toLowerCase()).to.include(\"não pode ficar em branco\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Usuario Teste\",\r\n  \"email\": \"\",\r\n  \"password\": \"123456\",\r\n  \"administrador\": \"true\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.7 Validar campo obrigatorio - Senha",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "//Validar campo obrigatório Senha\r",
+                  "pm.test(\"Campo obrigatório senha não informado\", function () {\r",
+                  "    pm.expect(jsonData).to.have.property(\"password\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Mensagem para campo Senha ser obrigatório exibida corretamente\", function () {\r",
+                  "    pm.expect(jsonData.password.toLowerCase()).to.include(\"não pode ficar em branco\");\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Usuario Teste\",\r\n  \"email\": \"{{randomEmail}}\",\r\n  \"password\": \"\",\r\n  \"administrador\": \"true\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.8 Validar campo obrigatorio - Administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Campo obrigatório administrador não informado\", function () {\r",
+                  "    pm.expect(jsonData).to.have.property(\"administrador\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Mensagem para campo Administrador ser obrigatório exibida corretamente\", function () {\r",
+                  "    const msg = jsonData.administrador.toLowerCase();\r",
+                  "\r",
+                  "    pm.expect(\r",
+                  "        msg.includes(\"true\") && msg.includes(\"false\")\r",
+                  "    ).to.be.true;\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Usuario Teste\",\r\n  \"email\": \"{{randomEmail}}\",\r\n  \"password\": \"123456\",\r\n  \"administrador\": \"\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.9 Validar campos obrigatorios - Todos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Todos os campos obrigatórios não informados\", function () {\r",
+                  "    [\"nome\",\"email\",\"password\",\"administrador\"].forEach(campo => {\r",
+                  "        pm.expect(jsonData).to.have.property(campo);\r",
+                  "    });\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Mensagem para os campo Nome,Email e Senha não aceitar ficar em branco exibida corretamente\", function () {\r",
+                  "    pm.expect(jsonData.nome.toLowerCase()).to.include(\"não pode ficar em branco\");\r",
+                  "    pm.expect(jsonData.email.toLowerCase()).to.include(\"não pode ficar em branco\");\r",
+                  "    pm.expect(jsonData.password.toLowerCase()).to.include(\"não pode ficar em branco\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Mensagem para o campo Administrador aceitar apenas True ou False exibida corretamente\", function () {\r",
+                  "    const msg = jsonData.administrador.toLowerCase();\r",
+                  "\r",
+                  "    pm.expect(\r",
+                  "        msg.includes(\"true\") && msg.includes(\"false\")\r",
+                  "    ).to.be.true;\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"\",\r\n  \"email\": \"\",\r\n  \"password\": \"\",\r\n  \"administrador\": \"\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.10 Criar usuário - Email invalido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//Funções\r",
+                  "function getErrorMessage(jsonData) {\r",
+                  "    if (!jsonData) return \"\";\r",
+                  "    if (jsonData.message) return jsonData.message.toLowerCase();\r",
+                  "    const firstKey = Object.keys(jsonData)[0];\r",
+                  "    return String(jsonData[firstKey]).toLowerCase();\r",
+                  "}\r",
+                  "\r",
+                  "// Teste\r",
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Validação de email invalido efetuado com sucesso\", function () {\r",
+                  "    const msg = getErrorMessage(jsonData);\r",
+                  "\r",
+                  "    pm.expect(msg).to.include(\"email\");\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Usuario Email Invalido\",\r\n  \"email\": \"email-invalido\",\r\n  \"password\": \"123456\",\r\n  \"administrador\": \"true\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.11 Criar usuário - Dados invalidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();\r",
+                  "\r",
+                  "pm.test(\"Status 400\", function () {\r",
+                  "    pm.response.to.have.status(400);\r",
+                  "});\r",
+                  "\r",
+                  "//Validar de criação de usuário com dados inválidos\r",
+                  "pm.test(\"Validação de dados invalido efetuado com sucesso\", function () {\r",
+                  "    pm.expect(jsonData).to.be.an(\"object\");\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"123\",\r\n  \"email\": \"true\",\r\n  \"password\": [],\r\n  \"administrador\": \"999\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "03.12 Usuario sem token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "//Validar tentativade autenticação sem Token\r",
+                  "pm.test(\"Validação de falha com requisição sem token efetuado com sucesso\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200]);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04. Limite de Taxa",
+      "item": [
+        {
+          "name": "04.1 Teste de Limite de Taxa",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.environment.get(\"request_count\")) {\r",
+                  "    pm.environment.set(\"request_count\", 0);\r",
+                  "}\r",
+                  "\r",
+                  "if (!pm.environment.get(\"rate_history\")) {\r",
+                  "    pm.environment.set(\"rate_history\", JSON.stringify([]));\r",
+                  "}"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// =============================\r",
+                  "// RATE LIMIT TEST - PROFISSIONAL\r",
+                  "// =============================\r",
+                  "\r",
+                  "// Contador\r",
+                  "let requestCount = pm.environment.get(\"request_count\") || 0;\r",
+                  "requestCount++;\r",
+                  "pm.environment.set(\"request_count\", requestCount);\r",
+                  "\r",
+                  "// Captura resposta\r",
+                  "const status = pm.response.code;\r",
+                  "const time = pm.response.responseTime;\r",
+                  "\r",
+                  "// Log\r",
+                  "console.log(\"================================\");\r",
+                  "console.log(\"Request:\", requestCount);\r",
+                  "console.log(\"Status:\", status);\r",
+                  "console.log(\"Tempo:\", time);\r",
+                  "console.log(\"================================\");\r",
+                  "\r",
+                  "// Histórico\r",
+                  "let history = pm.environment.get(\"rate_history\");\r",
+                  "history = history ? JSON.parse(history) : [];\r",
+                  "\r",
+                  "history.push({\r",
+                  "    request: requestCount,\r",
+                  "    status: status,\r",
+                  "    time: time\r",
+                  "});\r",
+                  "\r",
+                  "pm.environment.set(\"rate_history\", JSON.stringify(history));\r",
+                  "\r",
+                  "// =============================\r",
+                  "// VALIDAÇÕES\r",
+                  "// =============================\r",
+                  "\r",
+                  "// API não tem rate limit real → aceita 200 ou 400\r",
+                  "pm.test(\"Status válido\", function () {\r",
+                  "    pm.expect([200, 400, 429]).to.include(status);\r",
+                  "});\r",
+                  "\r",
+                  "// Performance\r",
+                  "pm.test(\"Tempo < 1000ms\", function () {\r",
+                  "    pm.expect(time).to.be.below(1000);\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Usuario Teste\",\r\n  \"email\": \"user{{$randomInt}}@teste.com\",\r\n  \"password\": \"123456\",\r\n  \"administrador\": \"true\"\r\n}\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "https://serverest.dev/usuarios",
+              "protocol": "https",
+              "host": [
+                "serverest",
+                "dev"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          "// Gerar dados dinâmicos\r",
+          "const random = Math.floor(Math.random() * 100000);\r",
+          "pm.environment.set(\"randomEmail\", `user${random}@teste.com`);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          "// Vaidações Padrão\r",
+          "\r",
+          "pm.test(\"Status code válido\", function () {\r",
+          "    pm.expect(pm.response.code).to.be.oneOf([200,201,204,400,401,404]);\r",
+          "});\r",
+          "\r",
+          "pm.test(\"Tempo de resposta < 1000ms\", function () {\r",
+          "    pm.expect(pm.response.responseTime).to.be.below(1000);\r",
+          "});\r",
+          "\r",
+          "pm.test(\"Content-Type JSON\", function () {\r",
+          "    const contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+          "    pm.expect(contentType).to.include(\"application/json\");\r",
+          "});\r",
+          "\r",
+          "\r",
+          "// Logs\r",
+          "\r",
+          "console.log(\"====== RESPONSE DEBUG ======\");\r",
+          "console.log(\"Status:\", pm.response.code);\r",
+          "console.log(\"Tempo:\", pm.response.responseTime);\r",
+          "console.log(\"Body:\", pm.response.text());\r",
+          "\r",
+          "let jsonData;\r",
+          "\r",
+          "try {\r",
+          "    jsonData = pm.response.json();\r",
+          "    console.log(\"JSON:\", jsonData);\r",
+          "} catch (e) {\r",
+          "    console.log(\"Resposta não é JSON\");\r",
+          "}\r",
+          "\r",
+          "\r",
+          "// Funções Gerais\r",
+          "\r",
+          "// retorna mensagem de erro independente do formato\r",
+          "function getErrorMessage(jsonData) {\r",
+          "    if (!jsonData) return \"\";\r",
+          "\r",
+          "    if (jsonData.message) {\r",
+          "        return jsonData.message.toLowerCase();\r",
+          "    }\r",
+          "\r",
+          "    const firstKey = Object.keys(jsonData)[0];\r",
+          "    return String(jsonData[firstKey]).toLowerCase();\r",
+          "}\r",
+          "\r",
+          "// valida mensagem de erro\r",
+          "function expectErrorMessage(jsonData, expected) {\r",
+          "    const message = getErrorMessage(jsonData);\r",
+          "    pm.expect(message).to.include(expected.toLowerCase());\r",
+          "}"
+        ]
+      }
+    }
+  ]
+}

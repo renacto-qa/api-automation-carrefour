@@ -1,0 +1,17 @@
+{
+  "name": "api-test-carrefour",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "newman run postman/collection.json -e postman/environment.json",
+
+    "test:funcional": "newman run postman/collection.json -e postman/environment.json --folder \"01. Autenticacao\" --folder \"02. Testes Positivos\" --folder \"03. Testes Negativos\" --env-var request_count=0 --env-var rate_history=[] --env-var execution_initialized= -r cli,htmlextra --reporter-htmlextra-export reports/Report_1_Funcionais.html",
+
+    "test:ratelimit": "newman run postman/collection.json -e postman/environment.json --folder \"04. Limite de Taxa\" -n 120 --delay-request 200 --env-var request_count=0 --env-var rate_history=[] --env-var execution_initialized= -r cli,htmlextra --reporter-htmlextra-export reports/Report_Tx_Limite.html",
+
+    "test:all": "npm run test:funcional && npm run test:ratelimit"
+  },
+  "devDependencies": {
+    "newman": "^6.2.2",
+    "newman-reporter-htmlextra": "^1.23.1"
+  }
+}
