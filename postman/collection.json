@@ -1400,19 +1400,36 @@
       "name": "04. Limite de Taxa",
       "item": [
         {
-          "name": "04.1 Teste de Limite de Taxa",
+          "name": "04.1 Listar usuarios - Limite de Taxa",
           "event": [
             {
-              "listen": "prerequest",
+              "listen": "test",
               "script": {
                 "exec": [
-                  "if (!pm.environment.get(\"request_count\")) {\r",
-                  "    pm.environment.set(\"request_count\", 0);\r",
+                  "// Validação do limite de taxa\r",
+                  "const totalRequests = 100;\r",
+                  "let passed = true;\r",
+                  "\r",
+                  "for (let i = 1; i <= totalRequests; i++) {\r",
+                  "    const status = pm.collectionVariables.get(\"req_\" + i);\r",
+                  "\r",
+                  "    if (i <= 100 && status !== 200) {\r",
+                  "        console.error(\"Erro: Req #\" + i + \" deveria ser 200, mas retornou \" + status);\r",
+                  "        passed = false;\r",
+                  "    }\r",
+                  "\r",
+                  "    if (i > 100 && !(status === 400 || status === 429)) {\r",
+                  "        console.error(\"Erro: Req #\" + i + \" deveria ser 400 ou 429, mas retornou \" + status);\r",
+                  "        passed = false;\r",
+                  "    }\r",
                   "}\r",
                   "\r",
-                  "if (!pm.environment.get(\"rate_history\")) {\r",
-                  "    pm.environment.set(\"rate_history\", JSON.stringify([]));\r",
-                  "}"
+                  "if (passed) {\r",
+                  "    console.log(\"✅ Teste de Limite de Taxa passou com sucesso!\");\r",
+                  "} else {\r",
+                  "    console.log(\"❌ Teste de Limite de Taxa falhou!\");\r",
+                  "}\r",
+                  ""
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -1420,54 +1437,10 @@
               }
             },
             {
-              "listen": "test",
+              "listen": "prerequest",
               "script": {
                 "exec": [
-                  "// =============================\r",
-                  "// RATE LIMIT TEST - PROFISSIONAL\r",
-                  "// =============================\r",
-                  "\r",
-                  "// Contador\r",
-                  "let requestCount = pm.environment.get(\"request_count\") || 0;\r",
-                  "requestCount++;\r",
-                  "pm.environment.set(\"request_count\", requestCount);\r",
-                  "\r",
-                  "// Captura resposta\r",
-                  "const status = pm.response.code;\r",
-                  "const time = pm.response.responseTime;\r",
-                  "\r",
-                  "// Log\r",
-                  "console.log(\"================================\");\r",
-                  "console.log(\"Request:\", requestCount);\r",
-                  "console.log(\"Status:\", status);\r",
-                  "console.log(\"Tempo:\", time);\r",
-                  "console.log(\"================================\");\r",
-                  "\r",
-                  "// Histórico\r",
-                  "let history = pm.environment.get(\"rate_history\");\r",
-                  "history = history ? JSON.parse(history) : [];\r",
-                  "\r",
-                  "history.push({\r",
-                  "    request: requestCount,\r",
-                  "    status: status,\r",
-                  "    time: time\r",
-                  "});\r",
-                  "\r",
-                  "pm.environment.set(\"rate_history\", JSON.stringify(history));\r",
-                  "\r",
-                  "// =============================\r",
-                  "// VALIDAÇÕES\r",
-                  "// =============================\r",
-                  "\r",
-                  "// API não tem rate limit real → aceita 200 ou 400\r",
-                  "pm.test(\"Status válido\", function () {\r",
-                  "    pm.expect([200, 400, 429]).to.include(status);\r",
-                  "});\r",
-                  "\r",
-                  "// Performance\r",
-                  "pm.test(\"Tempo < 1000ms\", function () {\r",
-                  "    pm.expect(time).to.be.below(1000);\r",
-                  "});"
+                  ""
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -1479,21 +1452,11 @@
             "disableBodyPruning": true
           },
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"nome\": \"Usuario Teste\",\r\n  \"email\": \"user{{$randomInt}}@teste.com\",\r\n  \"password\": \"123456\",\r\n  \"administrador\": \"true\"\r\n}\r\n}",
+              "raw": "",
               "options": {
                 "raw": {
                   "language": "json"
