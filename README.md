@@ -6,13 +6,13 @@ This project contains automated tests for the Carrefour API using Node.js and Po
 
 ## 📌 Overview
 
-- \This repository contains automated API tests developed as part of the Carrefour technical challenge.
-- \The project was designed following automation best practices, focusing on:
-- \Maintainability
-- \Scalability
-- \Clear reporting
-- \CI/CD integration
-- \Clean project structure
+* This repository contains automated API tests developed as part of the Carrefour technical challenge.
+* The project was designed following automation best practices, focusing on:
+* Maintainability
+* Scalability
+* Clear reporting
+* CI/CD integration
+* Clean project structure
 
 The tests validate functional and business rules of the Carrefour API using a structured and reproducible approach.
 
@@ -33,25 +33,25 @@ api-automation-carrefour/
 
 ## ⚙️ Tech Stack
 
-- \Node.js
-- \NPM
-- \Postman
-- \Newman (CLI runner)
-- \GitHub Actions (CI/CD)
+* Node.js
+* NPM
+* Postman
+* Newman (CLI runner)
+* GitHub Actions (CI/CD)
 
 ---
 
 ## 🚀 How to Run Locally
 
-1\. \Install Dependencies\*\*
-- \npm install
+1. \Install Dependencies\*\*
+* npm install
 
-2\. Run the Tests
-- \npm test
+2. Run the Tests
+* npm test
 
-3\. Access Reports
+3. Access Reports
 After execution, reports will be available inside:
-- \reports/
+* reports/
 
 ---
 
@@ -70,26 +70,26 @@ This project includes a CI/CD pipeline using GitHub Actions.
 
 Every push or pull request to the main branch:
 
-- \Installs dependencies
-- \Executes the API test suite
-- \Generates artifacts
-- \Validates pipeline integrity
+* Installs dependencies
+* Executes the API test suite
+* Generates artifacts
+* Validates pipeline integrity
 
 Workflow location:
-- \.github/workflows/api-tests.yml
+* .github/workflows/api-tests.yml
 
 ---
 
 ## 📖 Contribution
 
-1\. Fork the project.
-2\. Create a new branch:
-- \git checkout -b minha-feature
-3\. Commit your changes:
-- \git commit -m "Adiciona minha feature"
-4\. Push to the remote repository:	
-- \git push origin minha-feature
-5\. Open a Pull Request
+1. Fork the project.
+2. Create a new branch:
+* git checkout -b minha-feature
+3. Commit your changes:
+* git commit -m "Adiciona minha feature"
+4. Push to the remote repository:	
+* git push origin minha-feature
+5. Open a Pull Request
 
 ---
 
@@ -97,6 +97,7 @@ Workflow location:
 
 Renato de Souza Lima  
 QA Automation Engineer
+
 
 
 
